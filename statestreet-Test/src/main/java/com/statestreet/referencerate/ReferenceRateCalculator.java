@@ -1,10 +1,8 @@
-package com.testcode.statestreet.interfaces;
+package com.statestreet.referencerate;
+
 
 import com.sun.istack.internal.Nullable;
 
-/**
- * Created by mateusdasilva on 08/05/2016.
- */
 public interface ReferenceRateCalculator {
     void onConfiguration(Configuration configuration);
 

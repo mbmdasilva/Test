@@ -1,4 +1,4 @@
-package com.testcode.statestreet.enumeration;
+package com.statestreet.referencerate;
 
 /**
  * Created by mateusdasilva on 08/05/2016.
