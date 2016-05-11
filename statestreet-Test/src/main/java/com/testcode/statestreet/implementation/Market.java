@@ -1,14 +1,14 @@
 package com.testcode.statestreet.implementation;
 
 
-import com.testcode.statestreet.interfaces.PriceProvider;
-import com.testcode.statestreet.interfaces.PriceSource;
+import com.testcode.statestreet.enumeration.PriceProvider;
+import com.testcode.statestreet.enumeration.PriceSource;
 
 /**
  * Created by mateusdasilva on 09/05/2016.
  */
 public class Market {
-
+    private static int PRICE_SOURCES_CONT = PriceSource.values().length;
     PriceSource priceSource;
     PriceProvider priceProvider;
 
@@ -16,6 +16,17 @@ public class Market {
         this.priceProvider = priceProvider;
         this.priceSource = priceSource;
     }
+public  int hashCode(){
+    int hashCde = priceSource.ordinal() + (priceProvider != null ? PRICE_SOURCES_CONT+priceProvider.ordinal():0);
+            return hashCde;
+ }
+    public boolean equals(Object otherMarket){
+        if (!(otherMarket instanceof Market)){
+            return false;
+        }
 
-   // TODO: Need to cater for PriceProvider being null for some PriceSources
+
+    return priceSource == ((Market)otherMarket).priceSource && priceProvider == ((Market)otherMarket).priceProvider;
+    }
+
 }
