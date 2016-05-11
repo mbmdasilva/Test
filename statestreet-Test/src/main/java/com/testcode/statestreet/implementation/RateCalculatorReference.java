@@ -1,66 +1,83 @@
 package com.testcode.statestreet.implementation;
 
 import com.testcode.statestreet.interfaces.FxPrice;
-import com.testcode.statestreet.interfaces.PriceProvider;
-import com.testcode.statestreet.interfaces.PriceSource;
+import com.testcode.statestreet.enumeration.PriceProvider;
+import com.testcode.statestreet.enumeration.PriceSource;
 import com.testcode.statestreet.interfaces.ReferenceRateCalculator;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-
-public class RateCalculatorReference implements ReferenceRateCalculator {
+/**
+ * Created by mateusdasilva on 08/05/2016.
+ */
+public class ReferenceRateCalculatorImpl implements ReferenceRateCalculator {
 
     //There are approx. 50 different price sources and 30 different price providers.
     // The number of markets in the configuration varies from 3 to 15.
     // --> meaning a small number of data so safe to keep in memory
-    private Set<Market>marketList;
 
+    private Set<Market>marketList;
     //onConfiguration() is called to pass the list of markets we want to calculate the reference rate across.
     //onConfiguration() may be called again, which will be followed by onFxPrice() and calculate() calls.
     //There is a separate instance of ReferenceRateCalculator for each currency pair.
     //Every instance of ReferenceRateCalculator runs on a single thread, which means no synchronization required.
     // --> meaning no synchronization required
+    Map<Market, FxPrice> marketFxPriceMap = new HashMap();
+
+
     public void onConfiguration(Configuration configuration) {
         //The configuration gets changed infrequently, 1 or 2 times per day.
-        // --> meaning this method can be heavy and we should do as much as possible here in order to do less on onFxPrice() and calculate()
+        // --> meaning this method can be heavy and we should do as much as
+        // possible here in order to do less on onFxPrice() and calculate()
         int sizeOfMarket = configuration.getSize();
         marketList = new HashSet<Market>(sizeOfMarket);
 
-        for ( int listOfMarket =0; listOfMarket < sizeOfMarket; listOfMarket ++){
-            PriceSource source = configuration.getSource(listOfMarket);
-            PriceProvider provider = configuration.getProvider(listOfMarket);
+        for ( int index =0; index < sizeOfMarket; index ++){
+            PriceSource source = configuration.getSource(index);
+            PriceProvider provider = configuration.getProvider(index);
             //There are approx. 50 different price sources and 30 different price providers.
             // The number of markets in the configuration varies from 3 to 15.
-            // --> there are duplicates and Market should implement equals() & hashcode() accordingly to avoid duplicates on the Set
+            // --> there are duplicates and Market should implement equals() & hashcode()
+            // accordingly to avoid duplicates on the Set--done
+
+
             Market market = new Market(source, provider);
             marketList.add(market);
 
         }
     }
 
-
     public void onFxPrice(FxPrice fxPrice) {
-        //onFxPrice() is called on each market data update. By calling getSource() and getProvider() you know there the price came from. The price can be stale, in which case bid and offer are not defined (may be NaN or something else).
-        //Each onFxPrice() call is followed by calculate() call, which produces the reference rate. Bid and offer on the returning price are always set to the same value - the reference rate.
+        //onFxPrice() is called on each market data update. By calling getSource() and
+        // getProvider() you know there the price came from. The price can be stale,
+        // in which case bid and offer are not defined (may be NaN or something else).
+        //Each onFxPrice() call is followed by calculate() call,
+        // which produces the reference rate. Bid and offer on the returning price
+        // are always set to the same value - the reference rate.
         // --> think about what you would need to calculate the reference rate and see how you can do it here!
-        Map<Market, FxPrice> priceByMarket = new HashMap();
-
+        //
         Market market = new Market(fxPrice.getSource(),fxPrice.getProvider());
 
         if (marketList.contains(market)){
+            FxPriceImpl.getStalePrice();
             if(fxPrice.isStale()){
-                priceByMarket.remove(market);
+                marketFxPriceMap.remove(market);
+
             }else{
-                priceByMarket.put(market,fxPrice);
+
+                Double firstMidPrice = (fxPrice.getOffer() + fxPrice.getBid())/2d;
+                Double secondMidPrice = (fxPrice.getOffer() + fxPrice.getBid())/2d;
+                Double referenceRate = (firstMidPrice + secondMidPrice) /2d;
+                new FxPriceImpl(referenceRate,fxReferenceRate.getOffer(),FxPriceImpl.IS_NOT_STALE,null,null);
+
+                marketFxPriceMap.put(market,fxPrice);
             }
         }
-        //TODO: stale price where to add NaN values?
+
+
 
     }
-
+    FxPrice fxReferenceRate;
     public FxPrice calculate() {
         //The rate gets recalculated after each market data update, thousands of ticks per second.
         // --> Performance really important!
@@ -70,11 +87,8 @@ public class RateCalculatorReference implements ReferenceRateCalculator {
         //   public FxPrice calculate() {
         //       return referencePrize; // and make the calculations in onFxPrice() directly
         //   }
-        
-        //TODO: Here where we calculate the median price. how to?
+        fxReferenceRate = new FxPriceImpl(fxReferenceRate.getBid(),fxReferenceRate.getOffer(),FxPriceImpl.IS_NOT_STALE,null,null);
 
-
-
-        return null;
+        return fxReferenceRate;
     }
 }
