@@ -55,26 +55,31 @@ public class ReferenceRateCalculatorImpl implements ReferenceRateCalculator {
         // which produces the reference rate. Bid and offer on the returning price
         // are always set to the same value - the reference rate.
         // --> think about what you would need to calculate the reference rate and see how you can do it here!
-        //
+
+        int indexOfMiddleElement;
         Market market = new Market(fxPrice.getSource(),fxPrice.getProvider());
 
         if (marketList.contains(market)){
-            FxPriceImpl.getStalePrice();
+
             if(fxPrice.isStale()){
                 marketFxPriceMap.remove(market);
 
             }else{
 
-                Double firstMidPrice = (fxPrice.getOffer() + fxPrice.getBid())/2d;
-                Double secondMidPrice = (fxPrice.getOffer() + fxPrice.getBid())/2d;
-                Double referenceRate = (firstMidPrice + secondMidPrice) /2d;
-                new FxPriceImpl(referenceRate,fxReferenceRate.getOffer(),FxPriceImpl.IS_NOT_STALE,null,null);
-
                 marketFxPriceMap.put(market,fxPrice);
             }
         }
 
-
+        ArrayList<FxPrice> fxPrices = new ArrayList<FxPrice>(marketFxPriceMap.values());
+        int size = fxPrices.size();
+        FxPrice fxAveragePrice = FxPriceImpl.getStalePrice();
+        if (size >0){
+                Double averagePrice;
+                int indexOfPrice = size/2;
+                fxAveragePrice = fxPrices.get(indexOfPrice);
+                averagePrice= (fxAveragePrice.getOffer() + fxAveragePrice.getBid())/2d;
+            }
+        
 
     }
     FxPrice fxReferenceRate;
@@ -87,8 +92,7 @@ public class ReferenceRateCalculatorImpl implements ReferenceRateCalculator {
         //   public FxPrice calculate() {
         //       return referencePrize; // and make the calculations in onFxPrice() directly
         //   }
-        fxReferenceRate = new FxPriceImpl(fxReferenceRate.getBid(),fxReferenceRate.getOffer(),FxPriceImpl.IS_NOT_STALE,null,null);
-
+        
         return fxReferenceRate;
     }
 }
